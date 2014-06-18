@@ -1,0 +1,11 @@
+.\obj\croutine.o: ..\FreeRTOS_Source\croutine.c
+.\obj\croutine.o: ..\FreeRTOS_Source\include\FreeRTOS.h
+.\obj\croutine.o: C:\Keil\ARM\ARMCC\bin\..\include\stddef.h
+.\obj\croutine.o: ..\FreeRTOS_Source\include\projdefs.h
+.\obj\croutine.o: ..\User\FreeRTOSConfig.h
+.\obj\croutine.o: ..\FreeRTOS_Source\include\portable.h
+.\obj\croutine.o: ..\FreeRTOS_Source\portable\RVDS\ARM_CM0\portmacro.h
+.\obj\croutine.o: ..\FreeRTOS_Source\include\mpu_wrappers.h
+.\obj\croutine.o: ..\FreeRTOS_Source\include\task.h
+.\obj\croutine.o: ..\FreeRTOS_Source\include\list.h
+.\obj\croutine.o: ..\FreeRTOS_Source\include\croutine.h

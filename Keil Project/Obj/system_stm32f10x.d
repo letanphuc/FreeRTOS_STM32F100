@@ -1,0 +1,13 @@
+.\obj\system_stm32f10x.o: ..\User\system_stm32f10x.c
+.\obj\system_stm32f10x.o: ..\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\stm32f10x.h
+.\obj\system_stm32f10x.o: C:\Keil\ARM\PACK\ARM\CMSIS\3.20.4\CMSIS\Include\core_cm3.h
+.\obj\system_stm32f10x.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+.\obj\system_stm32f10x.o: C:\Keil\ARM\PACK\ARM\CMSIS\3.20.4\CMSIS\Include\core_cmInstr.h
+.\obj\system_stm32f10x.o: C:\Keil\ARM\PACK\ARM\CMSIS\3.20.4\CMSIS\Include\core_cmFunc.h
+.\obj\system_stm32f10x.o: ..\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\system_stm32f10x.h
+.\obj\system_stm32f10x.o: ..\User\stm32f10x_conf.h
+.\obj\system_stm32f10x.o: ..\Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_exti.h
+.\obj\system_stm32f10x.o: ..\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\stm32f10x.h
+.\obj\system_stm32f10x.o: ..\Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_gpio.h
+.\obj\system_stm32f10x.o: ..\Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_rcc.h
+.\obj\system_stm32f10x.o: ..\Libraries\STM32F10x_StdPeriph_Driver\inc\misc.h
