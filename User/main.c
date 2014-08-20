@@ -1,10 +1,13 @@
 #include "define.h"
+#include "UART.h"
+#include "SPI.h"
+#include "nrf24l01.h"
+
 
 static void prvSetupHardware( void );
 /* tasks */
 static void ledTask(void *pvParameters);
-static void ledTask2(void *pvParameters);
-static void buttonTask(void *pvParameters);
+static void rfTask(void *pvParameters);
 
 
 /*-----------------------------------------------------------*/
@@ -17,28 +20,17 @@ int main(void) {
 	
 	vSemaphoreCreateBinary( xEventSemaphore );
 	
-	xTaskCreate( 	ledTask2,
-					( signed char * ) "LE",
-					configMINIMAL_STACK_SIZE,
-					NULL,
-					mainQUEUE_SEND_TASK_PRIORITY + 1,
-					NULL );
-
+	printf("Now OS is running\n\r");
+	
 	xTaskCreate( 	ledTask,
 					( signed char * ) "LD",
 					configMINIMAL_STACK_SIZE,
 					NULL,
 					mainQUEUE_SEND_TASK_PRIORITY,
 					NULL );
-	xTaskCreate( 	timerTask,
-					( signed char * ) "TI",
-					configMINIMAL_STACK_SIZE * 3,
-					NULL,
-					mainQUEUE_SEND_TASK_PRIORITY,
-					NULL );
-	xTaskCreate( 	buttonTask,
-					( signed char * ) "BU",
-					configMINIMAL_STACK_SIZE * 3,
+	xTaskCreate( 	rfTask,
+					( signed char * ) "RF",
+					configMINIMAL_STACK_SIZE * 4,
 					NULL,
 					mainQUEUE_SEND_TASK_PRIORITY,
 					NULL );
@@ -49,48 +41,21 @@ int main(void) {
 }
 
 static void prvSetupHardware( void )
-{
-	GPIO_InitTypeDef GPIO_InitStructure;
-	USART_InitTypeDef USART_InitStructure;
-	
+{	
 	NVIC_SetPriorityGrouping( 0 );
 
+	/* Init LED */
 	STM32vldiscovery_LEDInit(LED3);
 	STM32vldiscovery_LEDInit(LED4);
-
 	STM32vldiscovery_LEDOff(LED3);
 	STM32vldiscovery_LEDOff(LED4);
-
-
+	
+	/* Init button */
 	STM32vldiscovery_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
+	
 	/* UART */
-
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO,ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
-
-
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_10;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-
-	GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9;
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;
-
-	GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-	USART_InitStructure.USART_BaudRate=9600;
-	USART_InitStructure.USART_HardwareFlowControl=USART_HardwareFlowControl_None;
-	USART_InitStructure.USART_Mode=USART_Mode_Rx|USART_Mode_Tx;
-	USART_InitStructure.USART_Parity=USART_Parity_No;
-	USART_InitStructure.USART_StopBits=USART_StopBits_1;
-	USART_InitStructure.USART_WordLength=USART_WordLength_8b;
-
-	USART_Init(USART1,&USART_InitStructure);
-
-	USART_Cmd(USART1,ENABLE);	
-
+	uart_init();
+	
 }
 
 static void ledTask(void *pvParameters){
@@ -98,32 +63,94 @@ static void ledTask(void *pvParameters){
 	while(1) {
 		STM32vldiscovery_LEDOff(LED4);
 		vTaskDelay(500);
-//		STM32vldiscovery_LEDOn(LED4);
-//		vTaskDelay(500);
-
-	}
-}
-
-static void ledTask2(void *pvParameters){
-	while(1) {
-//		STM32vldiscovery_LEDOff(LED3);
-//		vTaskDelay(200);
-//		STM32vldiscovery_LEDOn(LED3);
-//		vTaskDelay(200);
-		vTaskDelay(500);
 		STM32vldiscovery_LEDOn(LED4);
-		
-	} 
+		vTaskDelay(500);
+
+	}
 }
 
-static void buttonTask(void *pvParameters){
-	while(1){
-		if (STM32vldiscovery_PBGetState(BUTTON_USER) == SET){
-			printf("buttons \n\r");
-			STM32vldiscovery_LEDToggle(LED3);
-		}
-		vTaskDelay(100);
+
+void configRF_txAddress (uint8_t * add){
+	printf("configRF_txAddress\n\r");
+	nrf24l01_set_tx_addr(add,5);
+	delay_ms(1);
+}
+
+void RF_sendData(uint8_t * data, uint8_t len){
+	uint8_t i = 0;
+	for (i = 0; i < len; i++){
+		nrf24l01_write_tx_payload(data + i, 1, 0);
+		while (!(nrf24l01_irq_pin_active() && nrf24l01_irq_tx_ds_active()));
 	}
+}
+
+
+uint8_t RF_sendByte(uint8_t byte){
+	uint8_t reply = 0;
+	uint8_t count = 0;
+
+	nrf24l01_write_tx_payload(&byte, 1, true);
+	while (!(nrf24l01_irq_pin_active() && nrf24l01_irq_tx_ds_active()));
+	nrf24l01_irq_clear_all();
+	nrf24l01_set_as_rx(true);
+
+	delay_ms(1);
+	for (count = 0; count < 250; count++) {
+
+		if ((nrf24l01_irq_pin_active() && nrf24l01_irq_rx_dr_active())) {
+			nrf24l01_read_rx_payload(&reply, 1); //get the payload into data
+			break;
+		}
+		else {
+			printf(".");
+		}
+
+	}
+
+	nrf24l01_irq_clear_all(); //clear interrupts again
+
+
+	delay_ms(10); //wait for receiver to come from standby to RX
+	nrf24l01_set_as_tx(); //resume normal operation as a TX
+
+	return reply;
+}
+
+uint8_t* RF_sendArray(uint8_t* data, uint8_t len){
+	uint8_t i = 0;
+	static uint8_t reply[32] = {0};
+
+	for (i = 0; i < len; i++)
+		reply[i] = RF_sendByte(data[i]);
+
+	return reply;
+}
+
+
+static void rfTask(void *pvParameters){
+	uint8_t data = 32;
+	uint8_t new_data = 21;
+	uint8_t destIP[5] = { 192, 168, 1, 1, 111 };
+	
+	SPI_Init_For_RF();
+	nrf24l01_initialize_debug(false, 1, false);
+	printf("Local host now run\n\r");
+	configRF_txAddress(destIP);
+	while (1) {
+
+		//data = uart_getc();
+
+		data ++;
+		new_data = RF_sendByte(data);
+
+
+		printf("\n\rData send: %d -> %d\n\r", data, new_data);
+		if (new_data != data)
+			printf("Erororrororororr\n\r");
+		
+		vTaskDelay(1000);
+	}
+	
 }
 
 
